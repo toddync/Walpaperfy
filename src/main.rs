@@ -1,12 +1,9 @@
 use std::{
-    fs,
-    path::PathBuf,
-    sync::Mutex,
-    process::Command
+    fs, path::PathBuf, process::Command, sync::Mutex
 };
 
 mod env;
-use env::{REFRESH_TOKEN, SECRET, ID};
+use env::KEYS;
 
 use base64::{Engine as _, engine::general_purpose};
 use imageproc::filter::gaussian_blur_f32;
@@ -16,6 +13,7 @@ use image::DynamicImage;
 use serde_json::Value;
 use reqwest::Client;
 
+static KI: Lazy<Mutex<usize>> = Lazy::new(|| Mutex::new(0));
 static TOKEN: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
 static LAST_SONG: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
 
@@ -62,11 +60,20 @@ async fn get_img_link(output_dir: &PathBuf) {
                                 true => println!("song: {}", name),
                                 false => {}
                             },
-                            Err(_) => *LAST_SONG.lock().unwrap() = "".to_string()
+                            Err(_) => {
+                                *LAST_SONG.lock().unwrap() = "".to_string();
+                                println!("Error getting song image")
+                            }
                         }
                     }
                 }
             }
+        } else if res.status().as_u16() == 429 {
+            if *KI.lock().unwrap() >= KEYS.len() { *KI.lock().unwrap() = 0 }
+            else { *KI.lock().unwrap() += 1 }
+            *LAST_SONG.lock().unwrap() = "".to_string();
+            println!("Changing keys: {}", *KI.lock().unwrap());
+            refresh_token().await;
         }
     }
 }
@@ -112,10 +119,11 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
 }
 
 async fn refresh_token() {
-    let credentials = general_purpose::STANDARD.encode(format!("{}:{}", ID, SECRET));
+    let i = KI.lock().unwrap().to_owned();
+    let credentials = general_purpose::STANDARD.encode(format!("{}:{}", KEYS[i].0, KEYS[i].1));
     let params = [
         ("grant_type", "refresh_token"),
-        ("refresh_token", REFRESH_TOKEN),
+        ("refresh_token", KEYS[i].2),
     ];
 
     let response = Client::new()
@@ -131,6 +139,7 @@ async fn refresh_token() {
             if let Ok(json) = res.json::<serde_json::Value>().await {
                 if let Some(access_token) = json["access_token"].as_str() {
                     *TOKEN.lock().unwrap() = access_token.to_string();
+                    println!("Token refreshed.")
                 }
             }
         }

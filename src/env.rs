@@ -1,3 +1,8 @@
-pub static ID: &str = "YOUR_SPOTIFY_CLIENT-ID";
-pub static  SECRET: &str = "YOUR_SPOTIFY_CLIENT-SECRET";
-pub static REFRESH_TOKEN: &str = "YOUR_SPOTIFY_REFRESH_TOKEN";
+pub const KEYS: &[(&str, &str, &str)] = &[
+    (
+        "YOUR_ID",
+        "YOUR_SECRET",
+        "YOUR_TOKEN"
+    ),
+    // ...
+];

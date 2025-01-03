@@ -15,13 +15,15 @@
 2. **Get the Refresh Token**:
    To retrieve your refresh token:
 
-    - Run the `token.py` file.
+    - Run the `getToken.js` script.
     - Open the URL that appears in your terminal.
     - After being redirected, copy the code from the URL (the part after `code=`) and paste it back into the terminal. You'll then receive the refresh token to add to your `env.rs` file.
 
     ```bash
-    python token.py
+    node getToken.js
     ```
+
+    The more api's you set, the better, the code will switch between them to avoid the 13h wait time once you get rate-limited. To set more api's, just repeat the steps in this readme, up to this one.
 
 3. **Build the Application**:
    After setting everything up, run the following command to start the synchronization:
