@@ -38,4 +38,16 @@
     ./target/release/walpaperfy
     ```
 
+    If you have `~/.cargo/bin` on your path, you can install the package directly.
+
+    ```bash
+    cargo build --release && cargo install --path .
+    ```
+
+    Then run it like any other command.
+
+    ```bash
+    walpaperfy
+    ```
+
 Your wallpaper will now automatically update with the album art of the song you're currently listening to on Spotify!

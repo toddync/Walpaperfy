@@ -70,7 +70,7 @@ async fn get_img_link(output_dir: &PathBuf) {
                 }
             }
         } else if res.status().as_u16() == 429 {
-            if *KI.lock().unwrap() >= KEYS.len() { *KI.lock().unwrap() = 0 }
+            if *KI.lock().unwrap() > KEYS.len() -1 { *KI.lock().unwrap() = 0 }
             else { *KI.lock().unwrap() += 1 }
             refresh_token().await;
         }
@@ -84,7 +84,7 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
     let output_path= output_dir.join(format!("{}.png", name));
     for song in SONGS.lock().unwrap().clone() {
         if song == name {
-            Command::new("wal").args(&["-qeti", output_path.to_str().unwrap()]);
+            Command::new("wal").args(&["-qeti", output_path.to_str().unwrap()]).output()?;
             print!("cached ");
             return  Ok(true)
         }
@@ -108,7 +108,7 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
     canvas.save(&output_path)?;
     SONGS.lock().unwrap().push(name.to_string());
 
-    Command::new("wal").args(&["-qeti", output_path.to_str().unwrap()]);
+    Command::new("wal").args(&["-qeti", output_path.to_str().unwrap()]).output()?;
 
     print!("new ");
     Ok(true)
