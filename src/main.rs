@@ -20,7 +20,14 @@ async fn main() {
     let output_dir = PathBuf::from(home_dir).join(".images");
     fs::create_dir_all(&output_dir).unwrap();
 
-    *SONGS.lock().unwrap() = fs::read_dir(&output_dir).unwrap().map(|v| v.unwrap().file_name().into_string().unwrap()).collect();
+    *SONGS.lock().unwrap() = fs::read_dir(&output_dir).unwrap().map(|v| 
+        v
+            .unwrap()
+            .file_name()
+            .into_string()
+            .unwrap()
+            .replace(".png", "")
+        ).collect();
 
     let refresh_handle = tokio::spawn(async move {
         let mut interval = interval(Duration::from_secs(35 * 60));
@@ -84,6 +91,7 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
             Command::new("wal")
                 .args(&["-qeti", output_path.to_str().unwrap()])
                 .output()?;
+            print!("cached ");
             return  Ok(true)
         }
     }
@@ -105,6 +113,8 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
     );
 
     canvas.save(&output_path)?;
+
+    SONGS.lock().unwrap().push(name.to_string());
 
     Command::new("wal")
         .args(&["-qeti", output_path.to_str().unwrap()])
