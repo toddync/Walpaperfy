@@ -8,7 +8,6 @@ use reqwest::Client;
 
 mod env;
 use env::KEYS;
-
 static KI: Lazy<Mutex<usize>> = Lazy::new(|| Mutex::new(0));
 static SONGS: Lazy<Mutex<Vec<String>>> = Lazy::new(|| Mutex::new(vec![]));
 static TOKEN: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
@@ -64,10 +63,8 @@ async fn get_img_link(output_dir: &PathBuf) {
                                 true => println!("song: {}", name),
                                 false => {}
                             },
-                            Err(_) => {
-                                *CURRENT.lock().unwrap() = "".to_string();
-                                println!("Error getting song image")
-                            }
+                            Err(_) => *CURRENT.lock().unwrap() = "".to_string()
+                            
                         }
                     }
                 }
@@ -75,7 +72,6 @@ async fn get_img_link(output_dir: &PathBuf) {
         } else if res.status().as_u16() == 429 {
             if *KI.lock().unwrap() >= KEYS.len() { *KI.lock().unwrap() = 0 }
             else { *KI.lock().unwrap() += 1 }
-            *CURRENT.lock().unwrap() = "".to_string();
             refresh_token().await;
         }
     }
@@ -88,9 +84,7 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
     let output_path= output_dir.join(format!("{}.png", name));
     for song in SONGS.lock().unwrap().clone() {
         if song == name {
-            Command::new("wal")
-                .args(&["-qeti", output_path.to_str().unwrap()])
-                .output()?;
+            Command::new("wal").args(&["-qeti", output_path.to_str().unwrap()]);
             print!("cached ");
             return  Ok(true)
         }
@@ -99,7 +93,6 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
     let response = reqwest::get(img_url).await?;
     let bytes = response.bytes().await?;
     let original_image = image::load_from_memory(&bytes)?;
-
     let resized_image = original_image.resize_exact(screen_width, screen_height, image::imageops::FilterType::Lanczos3);
     let blurred_image = resized_image.blur(15.0);
 
@@ -113,43 +106,34 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
     );
 
     canvas.save(&output_path)?;
-
     SONGS.lock().unwrap().push(name.to_string());
 
-    Command::new("wal")
-        .args(&["-qeti", output_path.to_str().unwrap()])
-        .output()?;
+    Command::new("wal").args(&["-qeti", output_path.to_str().unwrap()]);
+
+    print!("new ");
     Ok(true)
 }
 
 async fn refresh_token() {
     let i = KI.lock().unwrap().to_owned();
     let credentials = general_purpose::STANDARD.encode(format!("{}:{}", KEYS[i].0, KEYS[i].1));
-    let params = [
-        ("grant_type", "refresh_token"),
-        ("refresh_token", KEYS[i].2),
-    ];
+    let params = [ ("grant_type", "refresh_token"), ("refresh_token", KEYS[i].2)];
 
     let response = Client::new()
         .post("https://accounts.spotify.com/api/token")
         .header("Authorization", format!("Basic {}", credentials))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .form(&params)
-        .send()
-        .await;
+        .send().await;
 
     match response {
         Ok(res) if res.status().is_success() => {
             if let Ok(json) = res.json::<serde_json::Value>().await {
                 if let Some(access_token) = json["access_token"].as_str() {
                     *TOKEN.lock().unwrap() = access_token.to_string();
-                    // println!("Token refreshed.")
                 }
             }
         }
-        _ => {
-            // println!("Token refresh failed. Retrying...");
-            Box::pin(refresh_token()).await;
-        }
+        _ => Box::pin(refresh_token()).await
     }
 }
