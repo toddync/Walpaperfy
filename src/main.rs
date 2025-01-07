@@ -59,10 +59,7 @@ async fn get_img_link(output_dir: &PathBuf) {
                 if let Some(image_url) = json.pointer("/item/album/images/1/url").and_then(|val| val.as_str()) {
                     if let Some(name) = json.pointer("/item/album/name").and_then(|val| val.as_str()) {
                         match  show(&image_url, &output_dir, name, 1024, 728).await {
-                            Ok(x) => match x {
-                                true => println!("song: {}", name),
-                                false => {}
-                            },
+                            Ok(_) => {},
                             Err(_) => *CURRENT.lock().unwrap() = "".to_string()
                             
                         }
@@ -70,8 +67,8 @@ async fn get_img_link(output_dir: &PathBuf) {
                 }
             }
         } else if res.status().as_u16() == 429 {
-            if *KI.lock().unwrap() > KEYS.len() -1 { *KI.lock().unwrap() = 0 }
-            else { *KI.lock().unwrap() += 1 }
+            *KI.lock().unwrap() += 1;
+            if *KI.lock().unwrap() > KEYS.len() - 1 { *KI.lock().unwrap() = 0 }
             refresh_token().await;
         }
     }
@@ -85,7 +82,7 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
     for song in SONGS.lock().unwrap().clone() {
         if song == name {
             Command::new("wal").args(&["-qeti", output_path.to_str().unwrap()]).output()?;
-            print!("cached ");
+            println!("( cache ) {}", name);
             return  Ok(true)
         }
     }
@@ -110,7 +107,7 @@ async fn show(img_url: &str, output_dir: &PathBuf, name: &str, screen_width: u32
 
     Command::new("wal").args(&["-qeti", output_path.to_str().unwrap()]).output()?;
 
-    print!("new ");
+    println!("( new ) {}", name);
     Ok(true)
 }
 

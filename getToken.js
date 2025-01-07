@@ -10,7 +10,7 @@ const SECRET = "YOUR_SPOTIFY_CLIENT_SECRET";
 
 (async () => {
 	let scope = "user-read-currently-playing"; // Request permission to read the currently playing song
-	let red = "http://localhost:8080/"; // Redirect URI, this needs to be registered in the Spotify developer dashboard
+	let red = "http://localhost"; // Redirect URI, this needs to be registered in the Spotify developer dashboard
 
 	// Display a message to the user to open the authorization URL in their browser
 	console.log(
