@@ -2,6 +2,9 @@
 name = "walpaperfy"
 version = "1.0.0"
 edition = "2021"
+description = "synchronize your walpaper and terminal colorscheme with spotify"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/toddync/Walpaperfy"
 
 [dependencies]
 base64 = "0.22.1"
